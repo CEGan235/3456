@@ -1,25 +1,48 @@
-<script src="/socket.io/socket.io.js"></script>
-<script src="script.js"></script>
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meine erste Webseite</title>
+    <title>Meine Spiele-Lobby</title>
     <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <header>
-        <h1>Willkommen auf meiner Webseite!</h1>
-    </header>
-    <main>
-        <p>Dies ist der Inhalt meiner statischen Webseite.</p>
-        <img src="bild.jpg" alt="Ein Bild">
-    </main>
-    <footer>
-        <p>&copy; 2025 Mein Name</p>
-    </footer>
-    <script src="script.js"></script>
-</body>
+    <div id="startScreen">
+        <h1>Willkommen zur Lobby!</h1>
+        <input type="text" id="playerNameInput" placeholder="Dein Spielername" required>
+        <button id="createGameBtn">Neues Spiel erstellen</button>
+        <br><br>
+        <input type="text" id="gameCodeInput" placeholder="Spielcode eingeben">
+        <button id="joinGameBtn">Spiel beitreten</button>
+
+        <hr>
+        <h3>Öffentliche Spiele</h3>
+        <ul id="publicGamesList">
+            <li>Lade öffentliche Spiele...</li>
+        </ul>
+        <p id="message"></p> </div>
+
+    <div id="gameArea" style="display: none;">
+        <h2>Spiel: <span id="gameCodeDisplay"></span></h2>
+        <p id="gameStatus"></p> <h3>Spieler in der Lobby:</h3>
+        <ul id="playerList">
+            </ul>
+
+        <button id="readyButton">Bereit</button>
+        <button id="startGameButton" style="display: none;">Spiel starten</button>
+        <button id="leaveGameButton">Lobby verlassen</button>
+
+        <hr>
+        <h3>Chat</h3>
+        <div id="chatMessages" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            </div>
+        <input type="text" id="chatInput" placeholder="Nachricht senden...">
+        <button id="sendChatBtn">Senden</button>
+
+        <div id="gameCanvas">
+            </div>
+    </div>
+
+    <script src="script.js"></script> </body>
 </html>
