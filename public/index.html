@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meine Spiele-Lobby</title>
+    <title>Meine Lobby-Spiele</title>
     <link rel="stylesheet" href="style.css">
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div id="startScreen">
-        <h1>Willkommen zur Lobby!</h1>
+        <h1>Willkommen bei den Lobby-Spielen!</h1>
         <input type="text" id="playerNameInput" placeholder="Dein Spielername" required>
         <button id="createGameBtn">Neues Spiel erstellen</button>
         <br><br>
@@ -29,19 +29,50 @@
         <ul id="playerList">
             </ul>
 
-        <button id="readyButton">Bereit</button>
-        <button id="startGameButton" style="display: none;">Spiel starten</button>
-        <button id="leaveGameButton">Lobby verlassen</button>
+        <div class="lobby-controls">
+            <button id="readyButton">Bereit</button>
+            <button id="startGameButton" style="display: none;">Spiel starten</button>
+            <button id="leaveGameButton">Lobby verlassen</button>
+        </div>
 
         <hr>
         <h3>Chat</h3>
-        <div id="chatMessages" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <div id="chatMessages" class="chat-box">
             </div>
         <input type="text" id="chatInput" placeholder="Nachricht senden...">
         <button id="sendChatBtn">Senden</button>
 
-        <div id="gameCanvas">
+        <hr>
+        <div id="gameContent">
+            <div id="quizArea" style="display: none;" class="game-phase-content">
+                <h3>Quiz-Zeit!</h3>
+                <h4 id="questionText"></h4>
+                <div id="quizOptions" class="quiz-options-container">
+                    </div>
+                <p id="timerDisplay">Zeit: --</p>
+                <p id="myQuizStatus"></p>
             </div>
+
+            <div id="quizResultArea" style="display: none;" class="game-phase-content">
+                <h3>Rundenergebnis!</h3>
+                <p id="correctAnswerDisplay">Die richtige Antwort war: </p>
+                <p id="myCurrentScore">Dein aktueller Score: 0</p>
+                <h4>Spieler-Scores diese Runde:</h4>
+                <ul id="playerScoresThisRound"></ul>
+                <p id="nextQuestionInfo"></p>
+            </div>
+
+            <div id="finalSipsArea" style="display: none;" class="game-phase-content">
+                <h3>Quiz beendet! Wer muss trinken?</h3>
+                <ul id="sipsList"></ul>
+                <button id="nextGameButton" style="display: none;">Nächstes Spiel starten</button>
+            </div>
+
+            <div id="placeholderGameArea" style="display: none;" class="game-phase-content">
+                <h3>Andere Spiele kommen bald!</h3>
+                <p>Bleibt dran für weitere spannende Minispiele.</p>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script> </body>
