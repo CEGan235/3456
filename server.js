@@ -1,16 +1,25 @@
-// server.js
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
-const fs = require('fs'); // Benötigt, um die JSON-Datei zu lesen
+const fs = require('fs');
+const cors = require('cors'); // <-- NEU: CORS-Modul importieren
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
 
-const PORT = process.env.PORT || 3000;
+// WICHTIG: Socket.IO mit CORS-Optionen initialisieren
+// 'origin: "*"' ist gut für die Entwicklung und erste Tests auf Render.
+// Für die Produktion solltest du dies auf die genaue URL deiner Render-App ändern,
+// z.B. "https://deine-render-app-url.onrender.com"
+const io = socketIo(server, {
+    cors: {
+        origin: "*", // Erlaubt Verbindungen von allen Domains
+        methods: ["GET", "POST"] // Erlaubte HTTP-Methoden
+    }
+});
+
+const PORT = process.env.PORT || 3000; // Dynamischer Port für Render, sonst 3000
 
 // Statische Dateien servieren (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,7 +31,7 @@ let publicGames = []; // Liste der öffentlichen Spiele
 // --- Quiz-Konstanten ---
 const QUESTION_TIME_LIMIT = 15; // Zeitlimit pro Frage in Sekunden
 const NEXT_QUESTION_DELAY = 5000; // Verzögerung zwischen Fragen in ms (5 Sekunden)
-const QUIZ_QUESTIONS_COUNT = 5; // Anzahl der Fragen pro Spiel - HIER AUF 5 GESETZT!
+const QUIZ_QUESTIONS_COUNT = 5; // Anzahl der Fragen pro Spiel
 
 let allQuizQuestions = []; // Hier werden alle Fragen geladen
 
@@ -148,14 +157,14 @@ io.on('connection', (socket) => {
              return io.to(gameCode).emit('gameError', `Nicht genug Quizfragen verfügbar. Benötigt: ${QUIZ_QUESTIONS_COUNT}, Verfügbar: ${allQuizQuestions.length}`);
         }
         game.shuffledQuestions = shuffleArray([...allQuizQuestions]).slice(0, QUIZ_QUESTIONS_COUNT);
-        
+
         Object.values(game.players).forEach(p => p.score = 0); // Scores zurücksetzen
         game.currentQuestionIndex = -1; // Index für die erste Frage vorbereiten
         game.state = 'quiz'; // Spielphase auf Quiz setzen
         io.to(gameCode).emit('gamePhaseChanged', { newPhase: game.state });
         addSystemMessageToChat(gameCode, 'Das Spiel hat begonnen! Erste Frage kommt...');
         console.log(`Spiel ${gameCode} gestartet mit ${game.shuffledQuestions.length} Fragen.`);
-        
+
         // Kleine Verzögerung, bevor die erste Frage gesendet wird, damit der Client die neue Phase rendern kann
         setTimeout(() => sendNextQuestion(gameCode), NEXT_QUESTION_DELAY);
     });
@@ -243,10 +252,6 @@ io.on('connection', (socket) => {
                 }
                 io.to(gameCode).emit('playerLeft', { playerName: playerName, players: game.players });
                 addSystemMessageToChat(gameCode, `${playerName} hat das Spiel verlassen.`);
-
-                // Wenn das Spiel im Quiz-Modus ist und Spieler gehen, sollte der Timer neu bewertet werden
-                // oder geprüft werden, ob noch genug Spieler für das Quiz da sind.
-                // Für dieses Beispiel lassen wir es laufen und Spieler, die gegangen sind, werden einfach nicht berücksichtigt.
             }
             updatePublicGamesList();
         }
@@ -366,7 +371,7 @@ io.on('connection', (socket) => {
              sendNextPhase(gameCode); // Versuche, zur nächsten Phase zu springen
              return;
         }
-        
+
         const correctOptionIndex = currentQuestion.correct;
         const correctAnswerText = currentQuestion.options[correctOptionIndex];
 
