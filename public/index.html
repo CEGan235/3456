@@ -3,76 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spiele</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="/socket.io/socket.io.js"></script>
+    <title>Sip & Quiz</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div id="startScreen">
-        <h1>Hallo Test</h1>
-        <input type="text" id="playerNameInput" placeholder="Dein Spielername" required>
-        <button id="createGameBtn">Neues Spiel erstellen</button>
-        <br><br>
+    <div id="startScreen" class="game-phase-content">
+        <h1>Willkommen bei Sip & Quiz!</h1>
+        <input type="text" id="playerNameInput" placeholder="Dein Name" required>
+        <button id="createGameBtn">Spiel erstellen</button>
+        <hr>
         <input type="text" id="gameCodeInput" placeholder="Spielcode eingeben">
         <button id="joinGameBtn">Spiel beitreten</button>
 
-        <hr>
-        <h3>Öffentliche Spiele</h3>
+        <div id="message" class="info-message"></div>
+
+        <h2>Öffentliche Spiele</h2>
         <ul id="publicGamesList">
-            <li>Lade öffentliche Spiele...</li>
+            <li>Lade Spiele...</li>
         </ul>
-        <p id="message"></p> </div>
+    </div>
 
     <div id="gameArea" style="display: none;">
-        <h2>Spiel: <span id="gameCodeDisplay"></span></h2>
-        <p id="gameStatus"></p> <h3>Spieler in der Lobby:</h3>
-        <ul id="playerList">
-            </ul>
-
-        <div class="lobby-controls">
-            <button id="readyButton">Bereit</button>
-            <button id="startGameButton" style="display: none;">Spiel starten</button>
-            <button id="leaveGameButton">Lobby verlassen</button>
+        <div class="header">
+            <h1>Sip & Quiz</h1>
+            <p>Spielcode: <span id="gameCodeDisplay"></span></p>
+            <p id="gameStatus"></p>
         </div>
 
-        <hr>
-        <h3>Chat</h3>
-        <div id="chatMessages" class="chat-box">
+        <div class="main-content">
+            <div class="left-panel">
+                <h2>Spieler</h2>
+                <ul id="playerList">
+                    </ul>
+                <div class="lobby-actions">
+                    <button id="readyButton">Bereit!</button>
+                    <button id="startGameButton" style="display: none;">Spiel starten</button>
+                    <button id="leaveGameButton" class="leave-button">Spiel verlassen</button>
+                </div>
             </div>
-        <input type="text" id="chatInput" placeholder="Nachricht senden...">
-        <button id="sendChatBtn">Senden</button>
 
-        <hr>
-        <div id="gameContent">
-            <div id="quizArea" style="display: none;" class="game-phase-content">
-                <h3>Quiz-Zeit!</h3>
-                <h4 id="questionText"></h4>
-                <div id="quizOptions" class="quiz-options-container">
+            <div class="center-panel">
+                <div id="gameContent">
+                    <div id="quizArea" class="game-phase-content" style="display: none;">
+                        <h2 id="questionText">Frage wird geladen...</h2>
+                        <div id="quizOptions">
+                            </div>
+                        <p id="timerDisplay">Zeit: --s</p>
+                        <p id="myQuizStatus"></p>
                     </div>
-                <p id="timerDisplay">Zeit: --</p>
-                <p id="myQuizStatus"></p>
+
+                    <div id="quizResultArea" class="game-phase-content" style="display: none;">
+                        <h2>Rundenergebnisse</h2>
+                        <p id="correctAnswerDisplay">Die richtige Antwort war: </p>
+                        <p id="myCurrentScore">Dein aktueller Score: </p>
+                        <h3>Spieler-Scores diese Runde:</h3>
+                        <ul id="playerScoresThisRound">
+                            </ul>
+                        <p id="nextQuestionInfo">Nächste Frage in X Sekunden...</p>
+                    </div>
+
+                    <div id="finalSipsArea" class="game-phase-content" style="display: none;">
+                        <h2>Quiz beendet! Zeit für die Schlücke!</h2>
+                        <h3>Wer muss wie viele Schlücke trinken?</h3>
+                        <ul id="sipsList">
+                            </ul>
+                        <button id="nextGameButton" style="display: none;">Nächstes Spiel starten</button>
+                    </div>
+
+                    <div id="placeholderGameArea" class="game-phase-content" style="display: none;">
+                        <p>Warte auf den Spielstart oder die nächste Runde...</p>
+                    </div>
+                </div>
             </div>
 
-            <div id="quizResultArea" style="display: none;" class="game-phase-content">
-                <h3>Rundenergebnis</h3>
-                <p id="correctAnswerDisplay">Die richtige Antwort war: </p>
-                <p id="myCurrentScore">Dein aktueller Score: 0</p>
-                <h4>Spieler-Scores diese Runde:</h4>
-                <ul id="playerScoresThisRound"></ul>
-                <p id="nextQuestionInfo"></p>
-            </div>
-
-            <div id="finalSipsArea" style="display: none;" class="game-phase-content">
-                <h3>Quiz beendet! Wer muss trinken?</h3>
-                <ul id="sipsList"></ul>
-                <button id="nextGameButton" style="display: none;">Nächstes Spiel starten</button>
-            </div>
-
-            <div id="placeholderGameArea" style="display: none;" class="game-phase-content">
-                <h3>Andere Spiele kommen bald</h3>
+            <div class="right-panel">
+                <h2>Chat</h2>
+                <div id="chatMessages">
+                    </div>
+                <input type="text" id="chatInput" placeholder="Nachricht eingeben">
+                <button id="sendChatBtn">Senden</button>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script> </body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/script.js"></script>
+</body>
 </html>
