@@ -1,6 +1,8 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+// Wenn du eine ältere Node.js-Version (vor 18) verwendest, musst du 'node-fetch' installieren
+ const fetch = require('node-fetch'); // npm install node-fetch
 
 const app = express();
 const server = http.createServer(app);
@@ -17,17 +19,42 @@ app.use(express.static('public'));
 // --- Lobby- und Spiel-Verwaltung auf dem Server ---
 const games = {}; // Speichert alle aktiven Spiele/Lobbys
 
-// Quiz-Fragen (könnten auch aus einer externen Datei geladen werden)
-const quizQuestions = [
-    { id: 0, question: "Wer hat die Mona Lisa gemalt?", options: ["Van Gogh", "Leonardo da Vinci", "Pablo Picasso"], correct: 1 },
-    { id: 1, question: "Was ist die Hauptstadt Frankreichs?", options: ["Berlin", "Madrid", "Paris"], correct: 2 },
-    { id: 2, question: "Wie viele Planeten hat unser Sonnensystem?", options: ["7", "8", "9"], correct: 1 }, // Pluto ist kein Planet mehr
-    { id: 3, question: "Welches Tier ist das schnellste Landtier?", options: ["Löwe", "Gepard", "Antilope"], correct: 1 },
-    { id: 4, question: "Was ist die chemische Formel für Wasser?", options: ["CO2", "O2", "H2O"], correct: 2 }
-];
+// NEU: URL zur Quiz-Fragen-JSON-Datei in deinem Git-Repo
+// ERSETZE DIES MIT DEINER EIGENEN RAW-CONTENT-URL!
+const QUIZ_QUESTIONS_URL = 'https://raw.githubusercontent.com/CEGan235/3456/refs/heads/main/quizQuestions.json';
+let quizQuestions = []; // Wird beim Serverstart geladen
 
 const QUIZ_QUESTION_TIME_LIMIT = 15; // Sekunden für jede Frage
 const QUIZ_RESULT_DISPLAY_TIME = 5000; // Millisekunden für Ergebnis-Anzeige
+
+
+// NEU: Funktion zum Laden der Quiz-Fragen von der URL
+async function loadQuizQuestions() {
+    try {
+        console.log(`Lade Quizfragen von: ${QUIZ_QUESTIONS_URL}`);
+        const response = await fetch(QUIZ_QUESTIONS_URL);
+        if (!response.ok) {
+            throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        // Stelle sicher, dass die geladenen Daten ein Array von Fragen sind
+        if (Array.isArray(data) && data.every(q => q.question && Array.isArray(q.options) && typeof q.correct === 'number')) {
+            quizQuestions = data;
+            console.log(`Erfolgreich ${quizQuestions.length} Quizfragen geladen.`);
+        } else {
+            console.error("Geladene Quizfragen haben unerwartetes Format:", data);
+            // Fallback: Wenn Fragen nicht geladen werden können, leeres Array lassen
+            quizQuestions = [];
+        }
+    } catch (error) {
+        console.error("Fehler beim Laden der Quizfragen:", error.message);
+        // Fallback: Wenn Laden fehlschlägt, leeres Array lassen oder Standardfragen verwenden
+        quizQuestions = [
+            { id: 0, question: "Fallback-Frage: Konnte die Fragen nicht laden. Was ist 1+1?", options: ["1", "2", "3"], correct: 1 }
+        ];
+    }
+}
+
 
 // Hilfsfunktion zum Generieren eines zufälligen, eindeutigen Spiel-Codes
 function generateGameCode() {
@@ -43,9 +70,17 @@ function sendNextQuizQuestion(gameCode) {
     const game = games[gameCode];
     if (!game) return;
 
+    // Stelle sicher, dass Fragen geladen sind
+    if (quizQuestions.length === 0) {
+        console.error("Keine Quizfragen geladen! Kann Quiz nicht starten.");
+        io.to(gameCode).emit('gameError', 'Quizfragen konnten nicht geladen werden.');
+        endQuiz(gameCode); // Beende das Quiz, da keine Fragen da sind
+        return;
+    }
+
     game.quiz.currentQuestionIndex++;
-    if (game.quiz.currentQuestionIndex < game.quiz.questions.length) {
-        const questionData = game.quiz.questions[game.quiz.currentQuestionIndex];
+    if (game.quiz.currentQuestionIndex < quizQuestions.length) { // Nutze jetzt 'quizQuestions' global
+        const questionData = quizQuestions[game.quiz.currentQuestionIndex];
         game.quiz.currentQuestion = questionData;
         game.quiz.playerAnswers = {}; // Antworten für neue Frage zurücksetzen
         game.quiz.answeredPlayers = new Set(); // Spieler, die geantwortet haben
@@ -70,12 +105,11 @@ function sendNextQuizQuestion(gameCode) {
     }
 }
 
-// Funktion zum Auswerten der Antworten
+// Funktion zum Auswerten der Antworten (bleibt gleich)
 function evaluateQuizAnswers(gameCode, timeUp = false) {
     const game = games[gameCode];
     if (!game || game.quiz.currentQuestionIndex === -1) return;
 
-    // Timer löschen, falls noch aktiv
     if (game.quiz.questionTimer) {
         clearTimeout(game.quiz.questionTimer);
         game.quiz.questionTimer = null;
@@ -85,40 +119,35 @@ function evaluateQuizAnswers(gameCode, timeUp = false) {
     const correctOptionIndex = currentQuestion.correct;
     const correctAnswerText = currentQuestion.options[correctOptionIndex];
 
-    const currentScores = {}; // Scores dieser Runde zur Anzeige
+    const currentScores = {};
     Object.keys(game.players).forEach(pId => {
         const playerAnswer = game.quiz.playerAnswers[pId];
-        let pointsEarned = 0;
         if (playerAnswer === correctOptionIndex) {
-            game.quiz.scores[pId]++; // Globale Score für Spieler erhöhen
-            pointsEarned = 1; // Für lokale Anzeige
+            game.quiz.scores[pId]++;
         }
-        currentScores[pId] = game.quiz.scores[pId]; // Gesamtscore
+        currentScores[pId] = game.quiz.scores[pId];
     });
 
-    // Sende Ergebnisse an alle Spieler
     io.to(gameCode).emit('gamePhaseChanged', { newPhase: 'quizResult' });
     io.to(gameCode).emit('questionResult', {
         questionIndex: currentQuestion.id,
         correctAnswerText: correctAnswerText,
         currentScores: currentScores,
-        players: game.players, // Spielerinfos zum Anzeigen der Namen
-        isLastQuestion: (game.quiz.currentQuestionIndex === game.quiz.questions.length - 1),
+        players: game.players,
+        isLastQuestion: (game.quiz.currentQuestionIndex === quizQuestions.length - 1), // Nutze 'quizQuestions.length'
         nextQuestionDelay: QUIZ_RESULT_DISPLAY_TIME
     });
 
     console.log(`Spiel ${gameCode}: Frage ${currentQuestion.id} ausgewertet.`);
 
-    // Wenn es die letzte Frage war, sofort Ende-Phase einleiten
-    if (game.quiz.currentQuestionIndex === game.quiz.questions.length - 1) {
+    if (game.quiz.currentQuestionIndex === quizQuestions.length - 1) { // Nutze 'quizQuestions.length'
         setTimeout(() => endQuiz(gameCode), QUIZ_RESULT_DISPLAY_TIME);
     } else {
-        // Warte und sende die nächste Frage
         setTimeout(() => sendNextQuizQuestion(gameCode), QUIZ_RESULT_DISPLAY_TIME);
     }
 }
 
-// Funktion zum Beenden des Quiz und Verteilen der Schlücke
+// Funktion zum Beenden des Quiz und Verteilen der Schlücke (bleibt gleich, außer questions.length)
 function endQuiz(gameCode) {
     const game = games[gameCode];
     if (!game) return;
@@ -129,70 +158,48 @@ function endQuiz(gameCode) {
     const finalScores = game.quiz.scores;
     const sipsToDistribute = {};
 
-    // Finde den niedrigsten Score
     const playerScoresArray = Object.values(finalScores);
-    if (playerScoresArray.length === 0) { // Kein Spieler, nichts zu tun
+    if (playerScoresArray.length === 0) {
         io.to(gameCode).emit('quizFinalResults', { sipsToDistribute: {}, players: game.players });
         return;
     }
     const minScore = Math.min(...playerScoresArray);
     const maxScore = Math.max(...playerScoresArray);
 
-    // Verteilung der Schlücke: Wer am wenigsten weiß, trinkt am meisten.
-    // Beispiel-Logik:
-    // Der Spieler mit dem geringsten Score bekommt am meisten (z.B. 3 Schlücke)
-    // Spieler mit mittlerem Score bekommen weniger (z.B. 2 Schlücke)
-    // Spieler mit hohem Score bekommen am wenigsten (z.B. 1 Schluck)
-    // Kann auch proportional zum Abstand vom maxScore berechnet werden
     Object.keys(game.players).forEach(pId => {
         const score = finalScores[pId];
         let sips = 0;
-        if (playerScoresArray.length > 1) { // Nur verteilen, wenn es mehr als einen Spieler gibt
+        if (playerScoresArray.length > 1) {
              if (score === minScore) {
-                sips = 3; // Niedrigster Score, am meisten trinken
+                sips = 3;
             } else if (score < maxScore) {
-                sips = 2; // Mittlerer Score
+                sips = 2;
             } else {
-                sips = 1; // Höchster Score, am wenigsten trinken
+                sips = 1;
             }
-            // Wenn alle den gleichen Score haben, bekommt jeder 1 Schluck
             if (minScore === maxScore) {
                 sips = 1;
             }
         } else {
-            sips = 0; // Einzelner Spieler trinkt nicht alleine
+            sips = 0;
         }
         sipsToDistribute[pId] = sips;
     });
 
     io.to(gameCode).emit('quizFinalResults', { sipsToDistribute: sipsToDistribute, players: game.players });
     console.log(`Spiel ${gameCode}: Quiz beendet. Schlücke:`, sipsToDistribute);
-
-    // Optional: Setze einen Timer, um nach den Ergebnissen zurück zur Lobby zu gehen
-    // oder warte auf Host-Aktion für nächstes Spiel
-    // setTimeout(() => {
-    //     game.status = 'waiting';
-    //     game.currentPhase = 'waitingForStart';
-    //     io.to(gameCode).emit('gamePhaseChanged', { newPhase: 'waitingForStart', players: game.players });
-    //     io.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
-    // }, 10000); // 10 Sekunden Anzeige der Ergebnisse
 }
 
 
 io.on('connection', (socket) => {
     console.log(`Neuer Spieler verbunden: ${socket.id}`);
 
-    // Bei neuer Verbindung: Liste der öffentlichen Spiele an Client senden
     socket.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
     
-    // --- Events vom Client behandeln ---
-
-    // 0. Öffentliche Spiele anfragen (wenn der Client neu lädt oder den Startbildschirm anzeigt)
     socket.on('requestPublicGames', () => {
         socket.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
     });
 
-    // 1. Spiel erstellen
     socket.on('createGame', (playerName) => {
         const gameCode = generateGameCode();
         games[gameCode] = {
@@ -202,20 +209,19 @@ io.on('connection', (socket) => {
                 [socket.id]: { id: socket.id, name: playerName, ready: false, isHost: true }
             },
             status: 'waiting',
-            currentPhase: 'waitingForStart', // Startet in Lobby-Phase
+            currentPhase: 'waitingForStart',
             currentGameModule: null,
             messages: [],
-            quiz: { // Quiz-spezifische Daten initialisieren
+            quiz: {
                 currentQuestionIndex: -1,
-                questions: [...quizQuestions], // Kopie der Fragen, damit sie nicht global verändert werden
-                playerAnswers: {}, // Antworten pro Frage
-                answeredPlayers: new Set(), // Welche Spieler haben in der aktuellen Runde geantwortet
-                scores: {}, // Globale Scores pro Spieler im Quiz
+                questions: [], // Wichtig: Dieses Array wird leer initialisiert und nicht mehr die lokale quizQuestions kopiert
+                playerAnswers: {},
+                answeredPlayers: new Set(),
+                scores: {},
                 currentQuestion: null,
                 questionTimer: null
             }
         };
-        // Initialisiere Scores für alle Spieler
         Object.keys(games[gameCode].players).forEach(pId => games[gameCode].quiz.scores[pId] = 0);
 
         socket.join(gameCode);
@@ -227,12 +233,11 @@ io.on('connection', (socket) => {
         io.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
     });
 
-    // 2. Spiel beitreten
     socket.on('joinGame', (data) => {
         const { gameCode, playerName } = data;
         const game = games[gameCode];
 
-        if (game && game.status === 'waiting' && game.currentPhase === 'waitingForStart') { // Nur beitreten, wenn noch in Lobby-Phase
+        if (game && game.status === 'waiting' && game.currentPhase === 'waitingForStart') {
             if (Object.keys(game.players).length >= 4) {
                 socket.emit('joinError', 'Spiel ist voll.');
                 return;
@@ -243,7 +248,7 @@ io.on('connection', (socket) => {
             }
 
             game.players[socket.id] = { id: socket.id, name: playerName, ready: false, isHost: false };
-            game.quiz.scores[socket.id] = 0; // Score für neuen Spieler initialisieren
+            game.quiz.scores[socket.id] = 0;
             socket.join(gameCode);
             socket.gameCode = gameCode;
 
@@ -262,7 +267,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 3. Spieler wechselt Ready-Status
     socket.on('playerReady', () => {
         const gameCode = socket.gameCode;
         if (gameCode && games[gameCode] && games[gameCode].players[socket.id]) {
@@ -279,7 +283,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 4. Spiel starten (nur für Host) - Startet jetzt das Quiz
     socket.on('startGame', () => {
         const gameCode = socket.gameCode;
         const game = games[gameCode];
@@ -289,6 +292,15 @@ io.on('connection', (socket) => {
             const allPlayersReady = Object.values(game.players).every(p => p.ready);
 
             if (playerCount >= 2 && allPlayersReady) {
+                // Wichtig: Die Fragen werden einmalig beim Serverstart geladen.
+                // Wenn du möchtest, dass sie bei JEDEM Spielstart neu geladen werden (für aktuelle Änderungen im Repo),
+                // müsstest du loadQuizQuestions() hier aufrufen.
+                // Aber das wäre weniger effizient. Einmal beim Serverstart ist in der Regel OK.
+                if (quizQuestions.length === 0) {
+                    socket.emit('gameError', 'Quizfragen konnten nicht geladen werden. Bitte Server neu starten.');
+                    return;
+                }
+
                 game.status = 'playing';
                 game.currentPhase = 'quiz';
                 game.currentGameModule = 'quiz';
@@ -296,9 +308,8 @@ io.on('connection', (socket) => {
                 io.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
                 console.log(`Spiel ${gameCode} gestartet. Startet Quiz.`);
                 
-                // Beginne das Quiz
-                game.quiz.currentQuestionIndex = -1; // Index zurücksetzen
-                Object.keys(game.players).forEach(pId => game.quiz.scores[pId] = 0); // Scores zurücksetzen
+                game.quiz.currentQuestionIndex = -1;
+                Object.keys(game.players).forEach(pId => game.quiz.scores[pId] = 0);
                 sendNextQuizQuestion(gameCode);
 
             } else {
@@ -309,20 +320,17 @@ io.on('connection', (socket) => {
         }
     });
 
-    // NEU: Spieler gibt Quiz-Antwort ab
     socket.on('submitAnswer', (data) => {
         const gameCode = socket.gameCode;
         const game = games[gameCode];
 
         if (game && game.currentPhase === 'quiz' && game.quiz.currentQuestion && !game.quiz.answeredPlayers.has(socket.id)) {
             const { questionIndex, answerIndex } = data;
-            // Prüfe, ob die Antwort zur aktuellen Frage passt
             if (questionIndex === game.quiz.currentQuestion.id) {
                 game.quiz.playerAnswers[socket.id] = answerIndex;
                 game.quiz.answeredPlayers.add(socket.id);
                 console.log(`${game.players[socket.id].name} hat geantwortet für Frage ${questionIndex}.`);
 
-                // Wenn alle geantwortet haben, Timer sofort löschen und auswerten
                 if (game.quiz.answeredPlayers.size === Object.keys(game.players).length) {
                     clearTimeout(game.quiz.questionTimer);
                     evaluateQuizAnswers(gameCode, false);
@@ -335,30 +343,23 @@ io.on('connection', (socket) => {
         }
     });
 
-    // NEU: Host startet das nächste Spiel (nach Quiz)
     socket.on('startNextGame', () => {
         const gameCode = socket.gameCode;
         const game = games[gameCode];
 
         if (game && game.hostId === socket.id && game.currentPhase === 'drinkingPhase') {
-            // Reset Game Status to Lobby
             game.status = 'waiting';
             game.currentPhase = 'waitingForStart';
             game.currentGameModule = null;
-            // Spieler sind nicht mehr 'bereit' für die nächste Runde
             Object.keys(game.players).forEach(pId => game.players[pId].ready = false);
-            // Quiz-Scores zurücksetzen
             Object.keys(game.players).forEach(pId => game.quiz.scores[pId] = 0);
 
-            io.to(gameCode).emit('gamePhaseChanged', { newPhase: 'waitingForStart', players: game.players }); // Wechselt zur Lobby-Ansicht
-            // Sende ein updatePublicGames, da der Status sich geändert hat
+            io.to(gameCode).emit('gamePhaseChanged', { newPhase: 'waitingForStart', players: game.players });
             io.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
             console.log(`Spiel ${gameCode}: Zurück zur Lobby, bereit für das nächste Spiel.`);
         }
     });
 
-
-    // 5. Chat-Nachricht senden
     socket.on('chatMessage', (message) => {
         const gameCode = socket.gameCode;
         if (gameCode && games[gameCode] && games[gameCode].players[socket.id]) {
@@ -369,14 +370,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 6. Lobby verlassen (z.B. durch Klick auf Button)
     socket.on('leaveGame', () => {
         const gameCode = socket.gameCode;
         if (gameCode && games[gameCode] && games[gameCode].players[socket.id]) {
             const playerName = games[gameCode].players[socket.id].name;
             const playerId = socket.id;
 
-            // Beende Timer, falls aktiv und Spieler verlässt
             if (games[gameCode].quiz.questionTimer && games[gameCode].currentPhase === 'quiz') {
                  clearTimeout(games[gameCode].quiz.questionTimer);
                  games[gameCode].quiz.questionTimer = null;
@@ -384,7 +383,7 @@ io.on('connection', (socket) => {
             }
 
             delete games[gameCode].players[playerId];
-            delete games[gameCode].quiz.scores[playerId]; // Score des Spielers entfernen
+            delete games[gameCode].quiz.scores[playerId];
             socket.leave(gameCode);
             socket.gameCode = undefined;
 
@@ -402,14 +401,12 @@ io.on('connection', (socket) => {
             io.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
             console.log(`${playerName} (${playerId}) hat Spiel ${gameCode} verlassen.`);
             
-            // Wenn der Spieler während des Quiz verlässt und das der letzte wartende Spieler war, auswerten
             if (games[gameCode] && games[gameCode].currentPhase === 'quiz' && games[gameCode].quiz.answeredPlayers.size === Object.keys(games[gameCode].players).length) {
                 evaluateQuizAnswers(gameCode, false);
             }
         }
     });
 
-    // 7. Spieler trennt die Verbindung (z.B. Browser geschlossen, Netzwerkproblem)
     socket.on('disconnect', () => {
         console.log(`Spieler getrennt: ${socket.id}`);
         const gameCode = socket.gameCode;
@@ -418,7 +415,6 @@ io.on('connection', (socket) => {
             const playerName = games[gameCode].players[socket.id].name;
             const playerId = socket.id;
 
-             // Beende Timer, falls aktiv und Spieler die Verbindung trennt
             if (games[gameCode].quiz.questionTimer && games[gameCode].currentPhase === 'quiz') {
                  clearTimeout(games[gameCode].quiz.questionTimer);
                  games[gameCode].quiz.questionTimer = null;
@@ -426,7 +422,7 @@ io.on('connection', (socket) => {
             }
 
             delete games[gameCode].players[playerId];
-            delete games[gameCode].quiz.scores[playerId]; // Score des Spielers entfernen
+            delete games[gameCode].quiz.scores[playerId];
 
             if (Object.keys(games[gameCode].players).length === 0) {
                 delete games[gameCode];
@@ -442,7 +438,6 @@ io.on('connection', (socket) => {
             io.emit('updatePublicGames', Object.values(games).filter(g => g.status === 'waiting'));
             console.log(`${playerName} (${playerId}) hat Spiel ${gameCode} getrennt.`);
 
-            // Wenn der Spieler während des Quiz verlässt und das der letzte wartende Spieler war, auswerten
             if (games[gameCode] && games[gameCode].currentPhase === 'quiz' && games[gameCode].quiz.answeredPlayers.size === Object.keys(games[gameCode].players).length) {
                 evaluateQuizAnswers(gameCode, false);
             }
@@ -452,6 +447,7 @@ io.on('connection', (socket) => {
 
 // Server starten
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen (PORT, async () => { // NEU: async beim listen-Callback
     console.log(`Server läuft auf http://localhost:${PORT}`);
+    await loadQuizQuestions(); // NEU: Lade Fragen beim Serverstart
 });

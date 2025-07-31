@@ -1,0 +1,7 @@
+[
+    { "id": 0, "question": "Wer hat die Mona Lisa gemalt?", "options": ["Van Gogh", "Leonardo da Vinci", "Pablo Picasso"], "correct": 1 },
+    { "id": 1, "question": "Was ist die Hauptstadt Frankreichs?", "options": ["Berlin", "Madrid", "Paris"], "correct": 2 },
+    { "id": 2, "question": "Wie viele Planeten hat unser Sonnensystem?", "options": ["7", "8", "9"], "correct": 1 },
+    { "id": 3, "question": "Welches Tier ist das schnellste Landtier?", "options": ["Löwe", "Gepard", "Antilope"], "correct": 1 },
+    { "id": 4, "question": "Was ist die chemische Formel für Wasser?", "options": ["CO2", "O2", "H2O"], "correct": 2 }
+  ]
