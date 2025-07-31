@@ -37,7 +37,7 @@ const quizResultArea = document.getElementById('quizResultArea');
 const correctAnswerDisplay = document.getElementById('correctAnswerDisplay');
 const myCurrentScore = document.getElementById('myCurrentScore');
 const playerScoresThisRound = document.getElementById('playerScoresThisRound');
-const nextQuestionInfo = document = document.getElementById('nextQuestionInfo');
+const nextQuestionInfo = document.getElementById('nextQuestionInfo');
 
 const finalSipsArea = document.getElementById('finalSipsArea');
 const sipsList = document.getElementById('sipsList');
