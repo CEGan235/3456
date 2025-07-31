@@ -1,8 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-// Wenn du eine ältere Node.js-Version (vor 18) verwendest, musst du 'node-fetch' installieren
- const fetch = require('node-fetch'); // npm install node-fetch
+
 
 const app = express();
 const server = http.createServer(app);
