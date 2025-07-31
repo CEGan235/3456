@@ -1,7 +1,302 @@
 [
-    { "id": 0, "question": "Wer hat die Mona Lisa gemalt?", "options": ["Van Gogh", "Leonardo da Vinci", "Pablo Picasso"], "correct": 1 },
-    { "id": 1, "question": "Was ist die Hauptstadt Frankreichs?", "options": ["Berlin", "Madrid", "Paris"], "correct": 2 },
-    { "id": 2, "question": "Wie viele Planeten hat unser Sonnensystem?", "options": ["7", "8", "9"], "correct": 1 },
-    { "id": 3, "question": "Welches Tier ist das schnellste Landtier?", "options": ["Löwe", "Gepard", "Antilope"], "correct": 1 },
-    { "id": 4, "question": "Was ist die chemische Formel für Wasser?", "options": ["CO2", "O2", "H2O"], "correct": 2 }
+    {
+      "id": 0,
+      "question": "Welcher Philosoph ist bekannt für den Ausspruch 'Ich denke, also bin ich'?",
+      "options": ["Platon", "René Descartes", "Immanuel Kant", "Friedrich Nietzsche"],
+      "correct": 1
+    },
+    {
+      "id": 1,
+      "question": "Welches chemische Element hat das Symbol 'W'?",
+      "options": ["Wasserstoff", "Wolfram", "Wismut", "Brom"],
+      "correct": 1
+    },
+    {
+      "id": 2,
+      "question": "Wer war der erste Mensch, der die Welt umsegelte?",
+      "options": ["Christoph Kolumbus", "Vasco da Gama", "Ferdinand Magellan", "James Cook"],
+      "correct": 2
+    },
+    {
+      "id": 3,
+      "question": "Welches ist das größte Korallenriffsystem der Welt?",
+      "options": ["Rotes Meer Korallenriff", "Florida Keys Riff", "Großes Barriereriff", "Belize Barriereriff"],
+      "correct": 2
+    },
+    {
+      "id": 4,
+      "question": "In welchem Jahr zerfiel die Sowjetunion offiziell?",
+      "options": ["1989", "1990", "1991", "1992"],
+      "correct": 2
+    },
+    {
+      "id": 5,
+      "question": "Welches der folgenden Werke wurde nicht von William Shakespeare geschrieben?",
+      "options": ["Hamlet", "Macbeth", "Oliver Twist", "Othello"],
+      "correct": 2
+    },
+    {
+      "id": 6,
+      "question": "Was ist die Einheit der Lichtstärke im SI-System?",
+      "options": ["Lumen", "Lux", "Candela", "Watt"],
+      "correct": 2
+    },
+    {
+      "id": 7,
+      "question": "Welche Schlacht beendete die Herrschaft Napoleons in Europa?",
+      "options": ["Schlacht bei Austerlitz", "Schlacht bei Leipzig", "Schlacht bei Waterloo", "Schlacht von Trafalgar"],
+      "correct": 2
+    },
+    {
+      "id": 8,
+      "question": "Welches Land ist der größte Kaffeeproduzent der Welt?",
+      "options": ["Kolumbien", "Vietnam", "Brasilien", "Äthiopien"],
+      "correct": 2
+    },
+    {
+      "id": 9,
+      "question": "Was ist die Hauptstadt von Neuseeland?",
+      "options": ["Auckland", "Christchurch", "Wellington", "Queenstown"],
+      "correct": 2
+    },
+    {
+      "id": 10,
+      "question": "Welche Art von Stern ist unsere Sonne?",
+      "options": ["Roter Riese", "Weißer Zwerg", "Gelber Zwerg", "Blauer Überriese"],
+      "correct": 2
+    },
+    {
+      "id": 11,
+      "question": "Wer malte das Gemälde 'Guernica'?",
+      "options": ["Salvador Dalí", "Pablo Picasso", "Vincent van Gogh", "Frida Kahlo"],
+      "correct": 1
+    },
+    {
+      "id": 12,
+      "question": "Welcher antike Stadtstaat war für seine militärische Stärke bekannt?",
+      "options": ["Athen", "Korinth", "Sparta", "Theben"],
+      "correct": 2
+    },
+    {
+      "id": 13,
+      "question": "Was ist die kleinste bekannte Baueinheit des Lebens?",
+      "options": ["Atom", "Molekül", "Zelle", "Organ"],
+      "correct": 2
+    },
+    {
+      "id": 14,
+      "question": "Welches ist das einzige Land, das sowohl den Äquator als auch den Nullmeridian durchquert?",
+      "options": ["Brasilien", "Spanien", "Ghana", "Ecuador"],
+      "correct": 2
+    },
+    {
+      "id": 15,
+      "question": "Wer formulierte die Relativitätstheorie?",
+      "options": ["Isaac Newton", "Niels Bohr", "Albert Einstein", "Max Planck"],
+      "correct": 2
+    },
+    {
+      "id": 16,
+      "question": "Was ist die offizielle Sprache in Brasilien?",
+      "options": ["Spanisch", "Portugiesisch", "Englisch", "Brasilianisch"],
+      "correct": 1
+    },
+    {
+      "id": 17,
+      "question": "Welches ist das einzige nicht-lateinische Alphabet, das auf Euro-Banknoten verwendet wird?",
+      "options": ["Kyrillisch", "Griechisch", "Arabisch", "Chinesisch"],
+      "correct": 1
+    },
+    {
+      "id": 18,
+      "question": "Welcher römische Kaiser regierte zur Zeit der größten Ausdehnung des Römischen Reiches?",
+      "options": ["Augustus", "Nero", "Trajan", "Diokletian"],
+      "correct": 2
+    },
+    {
+      "id": 19,
+      "question": "Was ist die Wissenschaft der Klassifizierung von Lebewesen?",
+      "options": ["Ökologie", "Genetik", "Taxonomie", "Anatomie"],
+      "correct": 2
+    },
+    {
+      "id": 20,
+      "question": "Welcher Kontinent hat die meisten Länder?",
+      "options": ["Asien", "Europa", "Afrika", "Nordamerika"],
+      "correct": 2
+    },
+    {
+      "id": 21,
+      "question": "Welches Instrument misst den atmosphärischen Druck?",
+      "options": ["Thermometer", "Hygrometer", "Barometer", "Anemometer"],
+      "correct": 2
+    },
+    {
+      "id": 22,
+      "question": "Wer schrieb 'Der Fänger im Roggen'?",
+      "options": ["Ernest Hemingway", "F. Scott Fitzgerald", "J.D. Salinger", "John Steinbeck"],
+      "correct": 2
+    },
+    {
+      "id": 23,
+      "question": "Welcher ist der längste Gebirgszug der Welt?",
+      "options": ["Rocky Mountains", "Himalaya", "Anden", "Alpen"],
+      "correct": 2
+    },
+    {
+      "id": 24,
+      "question": "Was ist der pH-Wert von reinem Wasser bei 25°C?",
+      "options": ["6", "7", "8", "9"],
+      "correct": 1
+    },
+    {
+      "id": 25,
+      "question": "Welches Land war das erste, das Frauen das Wahlrecht gewährte?",
+      "options": ["USA", "Großbritannien", "Neuseeland", "Finnland"],
+      "correct": 2
+    },
+    {
+      "id": 26,
+      "question": "Wer entdeckte die Penicillin-Wirkung?",
+      "options": ["Louis Pasteur", "Robert Koch", "Alexander Fleming", "Jonas Salk"],
+      "correct": 2
+    },
+    {
+      "id": 27,
+      "question": "Welche Farbe hat das Band auf den Olympischen Ringen, das Asien repräsentiert?",
+      "options": ["Blau", "Schwarz", "Grün", "Gelb"],
+      "correct": 3
+    },
+    {
+      "id": 28,
+      "question": "Was ist die Haupteinnahmequelle für Monaco?",
+      "options": ["Öl", "Landwirtschaft", "Tourismus und Glücksspiel", "Technologie"],
+      "correct": 2
+    },
+    {
+      "id": 29,
+      "question": "In welchem mythologischen Labyrinth wurde der Minotaurus gefangen gehalten?",
+      "options": ["Labyrinth von Kreta", "Gordischer Knoten", "Höhle von Platons", "Sonnentempel"],
+      "correct": 0
+    },
+    {
+      "id": 30,
+      "question": "Welches ist das einzige nicht-indigene Nagetier in Australien?",
+      "options": ["Känguru", "Wombat", "Hausmaus", "Koala"],
+      "correct": 2
+    },
+    {
+      "id": 31,
+      "question": "Welcher Fluss fließt durch Bagdad?",
+      "options": ["Nil", "Euphrat", "Tigris", "Jordan"],
+      "correct": 2
+    },
+    {
+      "id": 32,
+      "question": "Wer war der erste Generalsekretär der Vereinten Nationen?",
+      "options": ["Dag Hammarskjöld", "U Thant", "Trygve Lie", "Kofi Annan"],
+      "correct": 2
+    },
+    {
+      "id": 33,
+      "question": "Welches Land hat die längste Küstenlinie der Welt?",
+      "options": ["USA", "Russland", "Indonesien", "Kanada"],
+      "correct": 3
+    },
+    {
+      "id": 34,
+      "question": "Was ist der wissenschaftliche Name für den Menschen?",
+      "options": ["Homo erectus", "Homo habilis", "Homo sapiens", "Australopithecus"],
+      "correct": 2
+    },
+    {
+      "id": 35,
+      "question": "Welches Jahr markiert den Beginn der Renaissance in Italien?",
+      "options": ["1300", "1400", "1500", "1600"],
+      "correct": 1
+    },
+    {
+      "id": 36,
+      "question": "Welche chemische Verbindung ist der Hauptbestandteil von Marmor?",
+      "options": ["Siliziumdioxid", "Kalziumkarbonat", "Eisenoxid", "Magnesiumsulfat"],
+      "correct": 1
+    },
+    {
+      "id": 37,
+      "question": "Wer war der Autor von '1984'?",
+      "options": ["Aldous Huxley", "George Orwell", "Ray Bradbury", "Franz Kafka"],
+      "correct": 1
+    },
+    {
+      "id": 38,
+      "question": "Welches ist das einzige Meer, das keine Küstenlinie hat?",
+      "options": ["Südchinesisches Meer", "Mittelmeer", "Sargassosee", "Rotes Meer"],
+      "correct": 2
+    },
+    {
+      "id": 39,
+      "question": "Was ist der größte Vulkan auf der Erde (nach Volumen)?",
+      "options": ["Mount Fuji", "Ätna", "Mauna Loa", "Vesuv"],
+      "correct": 2
+    },
+    {
+      "id": 40,
+      "question": "Welche Farbe hat ein Rubinsaphir?",
+      "options": ["Blau", "Grün", "Rot", "Gelb"],
+      "correct": 2
+    },
+    {
+      "id": 41,
+      "question": "Wer entdeckte die Röntgenstrahlen?",
+      "options": ["Marie Curie", "Albert Einstein", "Wilhelm Conrad Röntgen", "Nikola Tesla"],
+      "correct": 2
+    },
+    {
+      "id": 42,
+      "question": "Welches Tier ist das Symbol des World Wide Fund for Nature (WWF)?",
+      "options": ["Tiger", "Elefant", "Panda", "Gorilla"],
+      "correct": 2
+    },
+    {
+      "id": 43,
+      "question": "Was ist das größte Gliedertier (Arthropode) der Welt?",
+      "options": ["Japanische Riesenkrabbe", "Goliathkäfer", "Riesentausendfüßler", "Königskrabbe"],
+      "correct": 0
+    },
+    {
+      "id": 44,
+      "question": "Welche Stadt ist als 'Ewige Stadt' bekannt?",
+      "options": ["Athen", "Jerusalem", "Rom", "Istanbul"],
+      "correct": 2
+    },
+    {
+      "id": 45,
+      "question": "Wer komponierte die Oper 'Die Zauberflöte'?",
+      "options": ["Johann Sebastian Bach", "Ludwig van Beethoven", "Wolfgang Amadeus Mozart", "Richard Wagner"],
+      "correct": 2
+    },
+    {
+      "id": 46,
+      "question": "Was ist der Name des größten Mondes im Sonnensystem?",
+      "options": ["Titan", "Ganymed", "Europa", "Callisto"],
+      "correct": 1
+    },
+    {
+      "id": 47,
+      "question": "In welchem Land befindet sich das Taj Mahal?",
+      "options": ["Pakistan", "Indien", "Bangladesch", "Nepal"],
+      "correct": 1
+    },
+    {
+      "id": 48,
+      "question": "Welches ist das am häufigsten vorkommende Gas in der Erdatmosphäre?",
+      "options": ["Sauerstoff", "Kohlendioxid", "Stickstoff", "Argon"],
+      "correct": 2
+    },
+    {
+      "id": 49,
+      "question": "Wer schrieb 'Die Verwandlung'?",
+      "options": ["Hermann Hesse", "Thomas Mann", "Franz Kafka", "Bertolt Brecht"],
+      "correct": 2
+    }
   ]
