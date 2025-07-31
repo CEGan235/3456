@@ -4,7 +4,7 @@
   "description": "A multiplayer quiz game with Socket.IO",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js", // <-- WICHTIG: Render wird diesen Befehl ausführen
+    "start": "node server.js", 
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,6 +13,6 @@
   "dependencies": {
     "express": "^4.19.2",
     "socket.io": "^4.7.5",
-    "cors": "^2.8.5" // <-- Füge 'cors' hier hinzu!
+    "cors": "^2.8.5" 
   }
 }
