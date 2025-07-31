@@ -260,173 +260,110 @@ io.on('connection', (socket) => {
     });
 
     // --- Chat-Nachricht ---
-    socket.on('chatMessage', (message) => {
+    socket.on('sendChatMessage', (message) => {
         const gameCode = findGameCodeByPlayerId(socket.id);
-        if (gameCode) {
-            const player = games[gameCode].players[socket.id];
-            // Sende die Nachricht nur, wenn der Spieler existiert
-            if (player) {
-                io.to(gameCode).emit('newChatMessage', { sender: player.name, message: message });
-            }
-        }
+        if (!gameCode) return;
+
+        const game = games[gameCode];
+        if (!game) return;
+
+        const player = game.players[socket.id];
+        if (!player) return;
+
+        const msg = {
+            sender: player.name,
+            text: message,
+            timestamp: new Date().toISOString()
+        };
+
+        io.to(gameCode).emit('chatMessage', msg);
     });
 
-    // --- Öffentliche Spiele anfragen ---
-    socket.on('requestPublicGames', () => {
-        socket.emit('updatePublicGames', publicGames);
-    });
+    // --- Helferfunktionen ---
 
-    // --- Hilfsfunktionen für den Server ---
+    // Spielcode finden anhand Player-ID
     function findGameCodeByPlayerId(playerId) {
         for (const code in games) {
-            if (games[code].players && games[code].players[playerId]) { // Zusätzliche Prüfung für 'players'
+            if (games[code].players[playerId]) {
                 return code;
             }
         }
         return null;
     }
 
+    // Zufälligen 6-stelligen Spielcode generieren (nur Zahlen)
     function generateGameCode() {
         let code;
         do {
-            code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            code = Math.floor(100000 + Math.random() * 900000).toString();
         } while (games[code]);
         return code;
     }
 
-    function addSystemMessageToChat(gameCode, message) {
-        io.to(gameCode).emit('newChatMessage', { sender: 'System', message: message });
-    }
-
-    function updatePublicGamesList() {
-        // Filtert Spiele heraus, die nur noch 0 oder 1 Spieler haben und nicht im Lobby-Status sind
-        publicGames = Object.values(games)
-            .filter(game => game.state === 'lobby' && Object.keys(game.players).length > 0)
-            .map(game => ({
-                id: game.gameCode,
-                hostName: game.players[game.hostId] ? game.players[game.hostId].name : 'Unbekannt',
-                players: game.players
-            }));
-        io.emit('updatePublicGames', publicGames); // Alle Clients über öffentliche Spiele informieren
-    }
-
-    // --- Quiz-Steuerungsfunktionen ---
+    // Nächste Frage an Spieler senden
     function sendNextQuestion(gameCode) {
         const game = games[gameCode];
-        if (!game) {
-            console.error(`Spiel ${gameCode} existiert nicht mehr.`);
-            return;
-        }
-        if (game.shuffledQuestions.length === 0) {
-            console.error(`Keine Fragen für Spiel ${gameCode} geladen oder ausgewählt.`);
-            endQuiz(gameCode); // Spiel beenden, wenn keine Fragen da sind
-            return;
-        }
+        if (!game) return;
 
         game.currentQuestionIndex++;
         if (game.currentQuestionIndex >= game.shuffledQuestions.length) {
-            // Alle Fragen wurden gestellt, gehe zur Ergebnisphase
-            console.log(`Alle Fragen für Spiel ${gameCode} gestellt. Berechne Endresultate.`);
+            // Quiz beendet
             endQuiz(gameCode);
             return;
         }
 
-        const questionData = game.shuffledQuestions[game.currentQuestionIndex];
-        game.playerAnswers = {}; // Antworten für die neue Frage zurücksetzen
+        // Frage an alle Spieler senden
+        const question = game.shuffledQuestions[game.currentQuestionIndex];
+        game.playerAnswers = {}; // Antworten für neue Frage zurücksetzen
 
         io.to(gameCode).emit('newQuestion', {
-            question: questionData.question,
-            options: questionData.options,
-            questionIndex: game.currentQuestionIndex, // Zur Validierung der Antwort
+            questionIndex: game.currentQuestionIndex,
+            questionText: question.question,
+            options: question.options,
             timeLimit: QUESTION_TIME_LIMIT
         });
-        console.log(`Frage ${game.currentQuestionIndex + 1} von ${QUIZ_QUESTIONS_COUNT} für Spiel ${gameCode} gesendet.`);
-        addSystemMessageToChat(gameCode, `Frage ${game.currentQuestionIndex + 1} von ${QUIZ_QUESTIONS_COUNT} wurde gestellt!`);
 
-        // Starte den Timer für die Antwortphase
-        if (game.questionTimer) { // Alten Timer löschen, falls vorhanden
-            clearTimeout(game.questionTimer);
-        }
+        addSystemMessageToChat(gameCode, `Frage ${game.currentQuestionIndex + 1} wird angezeigt.`);
+
+        // Timer setzen, nach Ablauf die Antworten auswerten
+        if (game.questionTimer) clearTimeout(game.questionTimer);
         game.questionTimer = setTimeout(() => {
             evaluateAnswers(gameCode);
         }, QUESTION_TIME_LIMIT * 1000);
     }
 
-    // --- Korrigierte evaluateAnswers Funktion ---
+    // Antworten auswerten
     function evaluateAnswers(gameCode) {
-        const game = games[gameCode];
-        if (!game) {
-            console.error(`Spiel ${gameCode} existiert nicht mehr bei evaluateAnswers.`);
-            return;
-        }
-
-        if (game.questionTimer) { // Timer stoppen
-            clearTimeout(game.questionTimer);
-            game.questionTimer = null;
-        }
-
-        const currentQuestion = game.shuffledQuestions[game.currentQuestionIndex];
-        // Sicherstellen, dass die Frage existiert und korrekt indiziert ist
-        if (!currentQuestion || currentQuestion.correct === undefined) {
-             console.error(`Fehler: Aktuelle Frage in Spiel ${gameCode} ist ungültig oder hat keine korrekte Antwort.`);
-             // Hier könnte man auch zur nächsten Frage springen oder das Spiel beenden
-             sendNextPhase(gameCode); // Versuche, zur nächsten Phase zu springen
-             return;
-        }
-
-        const correctOptionIndex = currentQuestion.correct;
-        const correctAnswerText = currentQuestion.options[correctOptionIndex];
-
-        // Berechne und aktualisiere die Scores für alle Spieler
-        Object.values(game.players).forEach(player => {
-            const playerAnswer = game.playerAnswers[player.id];
-            let pointsThisRound = 0;
-
-            // Überprüfe, ob der Spieler geantwortet hat und ob die Antwort korrekt ist
-            if (playerAnswer !== undefined && playerAnswer === correctOptionIndex) {
-                pointsThisRound = 1; // 1 Punkt für richtige Antwort
-                player.score += pointsThisRound;
-                console.log(`${player.name} (ID: ${player.id}) in Spiel ${gameCode} hat richtig geantwortet! Aktueller Score: ${player.score}`);
-            } else {
-                console.log(`${player.name} (ID: ${player.id}) in Spiel ${gameCode} hat falsch geantwortet oder nicht geantwortet. Score bleibt: ${player.score}`);
-            }
-        });
-
-        // Sende die Ergebnisse an JEDEN Spieler INDIVIDUELL
-        Object.values(game.players).forEach(player => {
-            io.to(player.id).emit('questionResult', {
-                correctAnswerText: correctAnswerText,
-                myScore: player.score, // Dies ist der persönliche Score des empfangenden Spielers
-                currentScores: Object.fromEntries(Object.values(game.players).map(p => [p.id, p.score])), // Scores aller Spieler für die Rangliste
-                players: Object.fromEntries(Object.values(game.players).map(p => [p.id, { name: p.name }])), // Namen für Anzeige auf Client
-                isLastQuestion: (game.currentQuestionIndex + 1) >= game.shuffledQuestions.length,
-                nextQuestionDelay: NEXT_QUESTION_DELAY
-            });
-        });
-
-        console.log(`Ergebnisse für Frage ${game.currentQuestionIndex + 1} in Spiel ${gameCode} gesendet.`);
-        addSystemMessageToChat(gameCode, `Die richtige Antwort war: "${correctAnswerText}".`);
-
-        // Verzögerter Übergang zur nächsten Phase
-        sendNextPhase(gameCode);
-    }
-
-    function sendNextPhase(gameCode) {
         const game = games[gameCode];
         if (!game) return;
 
-        // Wenn es noch Fragen gibt, die nächste Frage nach einer Verzögerung senden
-        if (game.currentQuestionIndex + 1 < game.shuffledQuestions.length) {
-            game.state = 'quizResult'; // Temporäre Phase für Ergebnisansicht
-            io.to(gameCode).emit('gamePhaseChanged', { newPhase: game.state });
-            setTimeout(() => sendNextQuestion(gameCode), NEXT_QUESTION_DELAY);
-        } else {
-            // Letzte Frage war das, gehe zur Endphase über
-            setTimeout(() => endQuiz(gameCode), NEXT_QUESTION_DELAY);
-        }
+        const currentQuestion = game.shuffledQuestions[game.currentQuestionIndex];
+        if (!currentQuestion) return;
+
+        // Bewertung: Punkte für richtige Antworten vergeben
+        Object.values(game.players).forEach(player => {
+            const answer = game.playerAnswers[player.id];
+            if (answer === currentQuestion.correctAnswerIndex) {
+                player.score++;
+            }
+        });
+
+        // Ergebnis an alle Spieler senden
+        io.to(gameCode).emit('questionResult', {
+            questionIndex: game.currentQuestionIndex,
+            correctAnswerIndex: currentQuestion.correctAnswerIndex,
+            playerAnswers: game.playerAnswers,
+            playersScores: Object.fromEntries(Object.values(game.players).map(p => [p.id, p.score]))
+        });
+
+        addSystemMessageToChat(gameCode, `Frage ${game.currentQuestionIndex + 1} ausgewertet.`);
+
+        // Nächste Frage nach Delay
+        if (game.questionTimer) clearTimeout(game.questionTimer);
+        game.questionTimer = setTimeout(() => sendNextQuestion(gameCode), NEXT_QUESTION_DELAY);
     }
 
-
+    // Quiz beenden
     function endQuiz(gameCode) {
         const game = games[gameCode];
         if (!game) {
@@ -445,14 +382,45 @@ io.on('connection', (socket) => {
 
         game.state = 'drinkingPhase';
         io.to(gameCode).emit('gamePhaseChanged', { newPhase: game.state });
-        io.to(gameCode).emit('quizFinalResults', {
-            sipsToDistribute: sipsToDistribute,
-            players: Object.fromEntries(Object.values(game.players).map(p => [p.id, { name: p.name }]))
+
+        // Sende die Schlucke individuell an jeden Spieler
+        Object.values(game.players).forEach(player => {
+            const mySips = sipsToDistribute[player.id] || 0;
+            io.to(player.id).emit('drinkingInstruction', {
+                mySips: mySips,
+                finalScores: Object.fromEntries(Object.values(game.players).map(p => [p.id, p.score])),
+                players: Object.fromEntries(Object.values(game.players).map(p => [p.id, { name: p.name }]))
+            });
         });
-        addSystemMessageToChat(gameCode, 'Das Quiz ist beendet! Zeit für die Schlucke!');
+
+        addSystemMessageToChat(gameCode, 'Das Quiz ist beendet! Die Trinkrunde beginnt.');
+        console.log(`Trinkphase für Spiel ${gameCode} gestartet.`);
+    }
+
+    // Systemnachricht in Chat senden
+    function addSystemMessageToChat(gameCode, message) {
+        io.to(gameCode).emit('chatMessage', {
+            sender: 'System',
+            text: message,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Öffentliche Spielerliste aktualisieren
+    function updatePublicGamesList() {
+        publicGames = Object.values(games)
+            .filter(g => g.state === 'lobby')
+            .map(g => ({
+                gameCode: g.gameCode,
+                playerCount: Object.keys(g.players).length,
+                hostName: g.players[g.hostId]?.name || "Unbekannt"
+            }));
+        io.emit('publicGamesUpdate', publicGames);
     }
 });
 
+
+// --- Server starten ---
 server.listen(PORT, () => {
     console.log(`Server läuft auf Port ${PORT}`);
 });
