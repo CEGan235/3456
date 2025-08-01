@@ -1,23 +1,18 @@
 {
-  "name": "mein-lobby-spiel",
+  "name": "sip-and-quiz",
   "version": "1.0.0",
-  "description": "Eine Webanwendung für Lobbys mit Minispielen",
+  "description": "A multiplayer quiz game with Socket.IO",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "lobby",
-    "socket.io",
-    "multiplayer",
-    "nodejs",
-    "express"
-  ],
+  "keywords": [],
   "author": "Dein Name",
   "license": "ISC",
   "dependencies": {
     "express": "^4.19.2",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "cors": "^2.8.5"
   }
 }
